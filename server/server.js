@@ -678,23 +678,6 @@ const getAllowedOrigins = () => {
   return allowed.filter(Boolean);
 };
 
-// const allowedOrigins = getAllowedOrigins();
-
-// const corsOptions = {
-//   origin: function (origin, callback) {
-//     if (!origin) return callback(null, true); // Allow Postman/mobile
-//     if (allowedOrigins.includes(origin)) {
-//       console.log('✅ CORS Allowed:', origin);
-//       callback(null, true);
-//     } else {
-//       console.warn('🚫 CORS Blocked:', origin);
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   },
-//   credentials: true,
-// };
-
-
 const allowedOrigins = [
   'https://clean-eco-campus.vercel.app', // your frontend
   'http://localhost:3000',                // local dev
@@ -746,7 +729,12 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/dustbins', require('./routes/dustbins'));
 app.use('/api/waste-reports', require('./routes/wasteReports'));
 app.use('/api/admin', require('./routes/admin'));
-
+// ✨ ADD THIS DEBUG CODE:
+app._router.stack.forEach(function(r){
+  if (r.route && r.route.path){
+    console.log('📍 Route:', r.route.path)
+  }
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
