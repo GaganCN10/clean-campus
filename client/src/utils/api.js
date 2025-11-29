@@ -94,7 +94,7 @@
 import axios from "axios";
 
 // ✅ Use environment variable or production URL
-const baseURL = process.env.REACT_APP_API_URL || "https://ecolocate.onrender.com/api";
+const baseURL = process.env.REACT_APP_API_URL || "https://ecolocate.onrender.com";
 
 console.log("🌍 Using API Base URL:", baseURL);
 

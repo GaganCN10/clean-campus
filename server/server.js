@@ -27,20 +27,24 @@ const getAllowedOrigins = () => {
   }
   return allowed.filter(Boolean);
 };
-
 const allowedOrigins = [
-  'https://ecolocate.vercel.app',           // ✅ Production frontend
-  'https://ecolocate-j7aqi9nbb-gagancn10s-projects.vercel.app', // ✅ Preview deployment
-  'http://localhost:3000',                  // Local dev
-  'http://127.0.0.1:3000',                  // Local dev alternative
+  'https://ecolocate.vercel.app',                                    // Production
+  'https://ecolocate-git-main-gagancn10s-projects.vercel.app',     // ✅ NEW: Git main preview
+  'https://ecolocate-j7aqi9nbb-gagancn10s-projects.vercel.app',    // Preview deployment
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
 ];
 
+// Add wildcard support for all Vercel preview deployments
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (Postman, mobile apps)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
+    // ✅ Allow all Vercel preview URLs
+    if (
+      allowedOrigins.includes(origin) || 
+      origin.endsWith('.vercel.app')  // Allow all Vercel subdomains
+    ) {
       console.log('✅ CORS Allowed:', origin);
       callback(null, true);
     } else {
@@ -49,14 +53,16 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization','x-auth-token'],
-  exposedHeaders: ['x-auth-token','Content-Length'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  exposedHeaders: ['x-auth-token', 'Content-Length'],
   preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // enable preflight requests
+app.options('*', cors(corsOptions));
+
 
 app.use(
   helmet({
