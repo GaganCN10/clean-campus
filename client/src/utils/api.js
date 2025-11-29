@@ -90,10 +90,9 @@
 //     return axios.get('http://localhost:5000/api/water-filters');
 //   },
 // };
-// export default api;
-import axios from "axios";
+// export default api;import axios from "axios";
 
-// ✅ Use environment variable or production URL
+// ✅ NO /api in baseURL
 const baseURL = process.env.REACT_APP_API_URL || "https://ecolocate.onrender.com";
 
 console.log("🌍 Using API Base URL:", baseURL);
@@ -116,8 +115,8 @@ api.interceptors.request.use(
 export const dustbinAPI = {
   addDustbin: async (dustbinData) => {
     const token = localStorage.getItem('adminToken');
-    // ✅ Use api instance instead of hardcoded URL
-    return api.post('/dustbins/add', dustbinData, {
+    // ✅ ADD /api prefix here
+    return api.post('/api/dustbins/add', dustbinData, {
       headers: {
         'x-auth-token': token,
         'Content-Type': 'application/json',
@@ -127,7 +126,8 @@ export const dustbinAPI = {
   
   deleteDustbin: async (dustbinId) => {
     const token = localStorage.getItem('adminToken');
-    return api.delete(`/dustbins/delete/${dustbinId}`, {
+    // ✅ ADD /api prefix here
+    return api.delete(`/api/dustbins/delete/${dustbinId}`, {
       headers: {
         'x-auth-token': token,
       },
@@ -135,15 +135,17 @@ export const dustbinAPI = {
   },
   
   getAllDustbins: async () => {
-    return api.get('/dustbins');
+    // ✅ ADD /api prefix here
+    return api.get('/api/dustbins');
   },
 };
 
-// ✅ Water Filter API using api instance
+// ✅ Water Filter API with /api prefix
 export const waterFilterAPI = {
   addWaterFilter: async (filterData) => {
     const token = localStorage.getItem('adminToken');
-    return api.post('/water-filters/add', filterData, {
+    // ✅ ADD /api prefix here
+    return api.post('/api/water-filters/add', filterData, {
       headers: {
         'x-auth-token': token,
         'Content-Type': 'application/json',
@@ -153,7 +155,8 @@ export const waterFilterAPI = {
   
   toggleStatus: async (filterId) => {
     const token = localStorage.getItem('adminToken');
-    return api.put(`/water-filters/toggle-status/${filterId}`, {}, {
+    // ✅ ADD /api prefix here
+    return api.put(`/api/water-filters/toggle-status/${filterId}`, {}, {
       headers: {
         'x-auth-token': token,
       },
@@ -162,7 +165,8 @@ export const waterFilterAPI = {
   
   updateQuality: async (filterId, quality) => {
     const token = localStorage.getItem('adminToken');
-    return api.put(`/water-filters/update-quality/${filterId}`, 
+    // ✅ ADD /api prefix here
+    return api.put(`/api/water-filters/update-quality/${filterId}`, 
       { quality }, 
       {
         headers: {
@@ -174,7 +178,8 @@ export const waterFilterAPI = {
   
   deleteWaterFilter: async (filterId) => {
     const token = localStorage.getItem('adminToken');
-    return api.delete(`/water-filters/delete/${filterId}`, {
+    // ✅ ADD /api prefix here
+    return api.delete(`/api/water-filters/delete/${filterId}`, {
       headers: {
         'x-auth-token': token,
       },
@@ -182,7 +187,8 @@ export const waterFilterAPI = {
   },
   
   getAllWaterFilters: async () => {
-    return api.get('/water-filters');
+    // ✅ ADD /api prefix here
+    return api.get('/api/water-filters');
   },
 };
 
