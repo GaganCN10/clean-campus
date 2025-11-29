@@ -29,8 +29,10 @@ const getAllowedOrigins = () => {
 };
 
 const allowedOrigins = [
-  'https://clean-eco-campus.vercel.app', // your frontend
-  'http://localhost:3000',                // local dev
+  'https://ecolocate.vercel.app',           // ✅ Production frontend
+  'https://ecolocate-j7aqi9nbb-gagancn10s-projects.vercel.app', // ✅ Preview deployment
+  'http://localhost:3000',                  // Local dev
+  'http://127.0.0.1:3000',                  // Local dev alternative
 ];
 
 const corsOptions = {
