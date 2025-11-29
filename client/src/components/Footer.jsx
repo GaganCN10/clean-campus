@@ -10,17 +10,6 @@ const Footer = () => {
           <p className="text-sm">
             Empowering our community to maintain a clean and sustainable environment.
           </p>
-          {/* <div className="flex mt-4 space-x-4" >
-            <a href="/" className="text-gray-400 hover:text-white transition duration-300">
-              <i data-feather="facebook" className="h-5 w-5"></i>
-            </a>
-            <a href="/report-waste" className="text-gray-400 hover:text-white transition duration-300">
-              <i data-feather="twitter" className="h-5 w-5"></i>
-            </a>
-            <a href="#" className="text-gray-400 hover:text-white transition duration-300">
-              <i data-feather="instagram" className="h-5 w-5"></i>
-            </a>
-          </div> */}
         </div>
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
@@ -34,14 +23,13 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Contact Us</h3>
           <p className="text-sm">
-            123 Campus Lane, University City, 12345<br />
-            Email: <a href="mailto:info@cleancampus.edu" className="hover:text-white transition duration-300">info@cleancampus.edu</a><br />
-            Phone: (123) 456-7890
+            Email: <a href="mailto:info@cleancampus.edu" className="hover:text-white transition duration-300">gcn3888@gmail.com</a><br />
+            Phone: +91 9019380114
           </p>
         </div>
       </div>
       <div className="mt-8 pt-8 border-t border-gray-700 text-center text-sm text-gray-400">
-        © 2024 Clean Campus. All Rights Reserved.
+        © 2025 Clean Campus. All Rights Reserved.
       </div>
     </footer>
   );

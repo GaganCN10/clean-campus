@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api, { dustbinAPI } from '../utils/api';
+import api, { dustbinAPI, waterFilterAPI } from '../utils/api';
 import toast from 'react-hot-toast';
 
 const AdminPage = () => {
@@ -8,17 +8,26 @@ const AdminPage = () => {
   const [reports, setReports] = useState([]);
   const [fetchingReports, setFetchingReports] = useState(false);
   
-  // Add Dustbin State
+  // Dustbin State
   const [showAddDustbin, setShowAddDustbin] = useState(false);
   const [dustbinName, setDustbinName] = useState('');
   const [location, setLocation] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [addingDustbin, setAddingDustbin] = useState(false);
-  
-  // ✨ NEW: Manage Dustbins State
   const [dustbins, setDustbins] = useState([]);
   const [fetchingDustbins, setFetchingDustbins] = useState(false);
   const [showManageDustbins, setShowManageDustbins] = useState(false);
+
+  // ✨ NEW: Water Filter State
+  const [showAddWaterFilter, setShowAddWaterFilter] = useState(false);
+  const [filterName, setFilterName] = useState('');
+  const [filterQuality, setFilterQuality] = useState(5);
+  const [filterLocation, setFilterLocation] = useState(null);
+  const [loadingFilterLocation, setLoadingFilterLocation] = useState(false);
+  const [addingWaterFilter, setAddingWaterFilter] = useState(false);
+  const [waterFilters, setWaterFilters] = useState([]);
+  const [fetchingWaterFilters, setFetchingWaterFilters] = useState(false);
+  const [showManageWaterFilters, setShowManageWaterFilters] = useState(false);
 
   const fetchReports = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -26,19 +35,12 @@ const AdminPage = () => {
     setFetchingReports(true);
     try {
       const token = localStorage.getItem('adminToken');
-      console.log('📥 Fetching admin reports...');
-      
       const res = await api.get('/api/admin/reports', {
-        headers: {
-          'x-auth-token': token
-        }
+        headers: { 'x-auth-token': token }
       });
-      
-      console.log('✅ Reports fetched:', res.data.length);
       setReports(res.data);
     } catch (err) {
       console.error('❌ Failed to fetch reports:', err);
-      
       if (err.response?.status === 401) {
         toast.error('Session expired. Please log in again.');
         logout();
@@ -50,15 +52,12 @@ const AdminPage = () => {
     }
   }, [isAuthenticated, logout]);
 
-  // ✨ NEW: Fetch dustbins
   const fetchDustbins = useCallback(async () => {
     if (!isAuthenticated) return;
     
     setFetchingDustbins(true);
     try {
-      console.log('📥 Fetching dustbins...');
       const res = await dustbinAPI.getAllDustbins();
-      console.log('✅ Dustbins fetched:', res.data.length);
       setDustbins(res.data);
     } catch (err) {
       console.error('❌ Failed to fetch dustbins:', err);
@@ -68,24 +67,37 @@ const AdminPage = () => {
     }
   }, [isAuthenticated]);
 
+  // ✨ NEW: Fetch water filters
+  const fetchWaterFilters = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
+    setFetchingWaterFilters(true);
+    try {
+      const res = await waterFilterAPI.getAllWaterFilters();
+      console.log('✅ Water filters fetched:', res.data.length);
+      setWaterFilters(res.data);
+    } catch (err) {
+      console.error('❌ Failed to fetch water filters:', err);
+      toast.error('Failed to fetch water filters');
+    } finally {
+      setFetchingWaterFilters(false);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchReports();
       fetchDustbins();
+      fetchWaterFilters();
     }
-  }, [isAuthenticated, fetchReports, fetchDustbins]);
+  }, [isAuthenticated, fetchReports, fetchDustbins, fetchWaterFilters]);
 
   const handleMarkAsClean = async (id) => {
     try {
       const token = localStorage.getItem('adminToken');
-      console.log('🧹 Marking report as clean:', id);
-      
       await api.put(`/api/admin/clean/${id}`, {}, {
-        headers: {
-          'x-auth-token': token
-        }
+        headers: { 'x-auth-token': token }
       });
-      
       toast.success('Report marked as clean!');
       fetchReports();
     } catch (err) {
@@ -113,7 +125,6 @@ const AdminPage = () => {
       (error) => {
         console.error('❌ Geolocation error:', error);
         let errorMessage = 'Failed to get location';
-        
         switch (error.code) {
           case error.PERMISSION_DENIED:
             errorMessage = 'Location permission denied. Please enable location access.';
@@ -127,15 +138,50 @@ const AdminPage = () => {
           default:
             errorMessage = 'An unknown error occurred';
         }
-        
         toast.error(errorMessage, { id: 'location' });
         setLoadingLocation(false);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  // ✨ NEW: Get location for water filter
+  const getFilterLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLoadingFilterLocation(true);
+    toast.loading('Getting your location...', { id: 'filter-location' });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFilterLocation({ latitude, longitude });
+        toast.success(`Location captured: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, { id: 'filter-location' });
+        setLoadingFilterLocation(false);
+      },
+      (error) => {
+        console.error('❌ Geolocation error:', error);
+        let errorMessage = 'Failed to get location';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied. Please enable location access.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out';
+            break;
+          default:
+            errorMessage = 'An unknown error occurred';
+        }
+        toast.error(errorMessage, { id: 'filter-location' });
+        setLoadingFilterLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -163,9 +209,6 @@ const AdminPage = () => {
       });
 
       toast.success('Dustbin added successfully! 🎉', { id: loadingToast });
-      console.log('✅ Dustbin added:', response.data);
-
-      // Reset form and refresh dustbin list
       setDustbinName('');
       setLocation(null);
       setShowAddDustbin(false);
@@ -178,7 +221,47 @@ const AdminPage = () => {
     }
   };
 
-  // ✨ NEW: Handle delete dustbin
+  // ✨ NEW: Handle add water filter
+  const handleAddWaterFilter = async (e) => {
+    e.preventDefault();
+
+    if (!filterLocation) {
+      toast.error('Please capture your current location first');
+      return;
+    }
+
+    if (!filterName.trim()) {
+      toast.error('Please enter a water filter name');
+      return;
+    }
+
+    setAddingWaterFilter(true);
+    const loadingToast = toast.loading('Adding water filter...');
+
+    try {
+      const response = await waterFilterAPI.addWaterFilter({
+        name: filterName.trim(),
+        latitude: filterLocation.latitude,
+        longitude: filterLocation.longitude,
+        quality: filterQuality,
+      });
+
+      toast.success('Water filter added successfully! 💧', { id: loadingToast });
+      console.log('✅ Water filter added:', response.data);
+
+      setFilterName('');
+      setFilterLocation(null);
+      setFilterQuality(5);
+      setShowAddWaterFilter(false);
+      fetchWaterFilters();
+    } catch (err) {
+      console.error('❌ Failed to add water filter:', err);
+      toast.error(err.response?.data?.message || 'Failed to add water filter', { id: loadingToast });
+    } finally {
+      setAddingWaterFilter(false);
+    }
+  };
+
   const handleDeleteDustbin = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete the dustbin "${name}"? This action cannot be undone.`)) {
       return;
@@ -189,12 +272,57 @@ const AdminPage = () => {
     try {
       await dustbinAPI.deleteDustbin(id);
       toast.success('Dustbin deleted successfully!', { id: loadingToast });
-      
-      // Update local state immediately for better UX
       setDustbins(prevDustbins => prevDustbins.filter(bin => bin._id !== id));
     } catch (err) {
       console.error('❌ Failed to delete dustbin:', err);
       toast.error(err.response?.data?.message || 'Failed to delete dustbin', { id: loadingToast });
+    }
+  };
+
+  // ✨ NEW: Handle toggle water filter status
+  const handleToggleWaterFilterStatus = async (id, currentStatus, name) => {
+    const newStatus = currentStatus === 'available' ? 'unavailable' : 'available';
+    const loadingToast = toast.loading(`Marking filter as ${newStatus}...`);
+
+    try {
+      await waterFilterAPI.toggleStatus(id);
+      toast.success(`Water filter "${name}" is now ${newStatus}!`, { id: loadingToast });
+      fetchWaterFilters();
+    } catch (err) {
+      console.error('❌ Failed to toggle status:', err);
+      toast.error(err.response?.data?.message || 'Failed to update status', { id: loadingToast });
+    }
+  };
+
+  // ✨ NEW: Handle delete water filter
+  const handleDeleteWaterFilter = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete the water filter "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    const loadingToast = toast.loading('Deleting water filter...');
+
+    try {
+      await waterFilterAPI.deleteWaterFilter(id);
+      toast.success('Water filter deleted successfully!', { id: loadingToast });
+      setWaterFilters(prevFilters => prevFilters.filter(filter => filter._id !== id));
+    } catch (err) {
+      console.error('❌ Failed to delete water filter:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete water filter', { id: loadingToast });
+    }
+  };
+
+  // ✨ NEW: Handle update water filter quality
+  const handleUpdateQuality = async (id, newQuality, name) => {
+    const loadingToast = toast.loading('Updating quality...');
+
+    try {
+      await waterFilterAPI.updateQuality(id, newQuality);
+      toast.success(`Quality updated for "${name}"!`, { id: loadingToast });
+      fetchWaterFilters();
+    } catch (err) {
+      console.error('❌ Failed to update quality:', err);
+      toast.error(err.response?.data?.message || 'Failed to update quality', { id: loadingToast });
     }
   };
 
@@ -204,13 +332,10 @@ const AdminPage = () => {
     const username = formData.get('username');
     const password = formData.get('password');
     
-    console.log('🔐 Attempting login for:', username);
-    
     const loadingToast = toast.loading('Logging in...');
     
     try {
       const res = await login({ username, password });
-      
       toast.dismiss(loadingToast);
       
       if (res.success) {
@@ -283,13 +408,6 @@ const AdminPage = () => {
             Login
           </button>
           
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800 text-center">
-              <strong>Default credentials:</strong><br />
-              Username: admin<br />
-              Password: admin123
-            </p>
-          </div>
         </form>
       </div>
     );
@@ -310,7 +428,7 @@ const AdminPage = () => {
         </button>
       </div>
 
-      {/* ✨ Add Dustbin Section */}
+      {/* Add Dustbin Section */}
       <div className="mb-8 bg-gradient-to-r from-blue-50 to-emerald-50 p-6 rounded-xl shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -329,9 +447,7 @@ const AdminPage = () => {
           <form onSubmit={handleAddDustbin} className="bg-white p-6 rounded-lg shadow-md">
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-700 font-medium mb-2">
-                  Current Location
-                </label>
+                <label className="block text-gray-700 font-medium mb-2">Current Location</label>
                 <div className="flex gap-3 items-center">
                   <button
                     type="button"
@@ -379,7 +495,93 @@ const AdminPage = () => {
         )}
       </div>
 
-      {/* ✨ NEW: Manage Dustbins Section */}
+      {/* ✨ NEW: Add Water Filter Section */}
+      <div className="mb-8 bg-gradient-to-r from-cyan-50 to-blue-50 p-6 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800">💧 Add New Water Filter</h2>
+            <p className="text-sm text-gray-600 mt-1">Add a water filter at your current location</p>
+          </div>
+          <button
+            onClick={() => setShowAddWaterFilter(!showAddWaterFilter)}
+            className="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors font-medium"
+          >
+            {showAddWaterFilter ? 'Close' : '+ Add Water Filter'}
+          </button>
+        </div>
+
+        {showAddWaterFilter && (
+          <form onSubmit={handleAddWaterFilter} className="bg-white p-6 rounded-lg shadow-md">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Current Location</label>
+                <div className="flex gap-3 items-center">
+                  <button
+                    type="button"
+                    onClick={getFilterLocation}
+                    disabled={loadingFilterLocation}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 font-medium"
+                  >
+                    {loadingFilterLocation ? '⏳ Getting Location...' : '📍 Capture Location'}
+                  </button>
+                  
+                  {filterLocation && (
+                    <div className="flex-1 bg-blue-50 p-3 rounded-lg">
+                      <p className="text-sm text-blue-800 font-mono">
+                        📍 Lat: {filterLocation.latitude.toFixed(6)}, Lng: {filterLocation.longitude.toFixed(6)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-medium mb-2" htmlFor="filterName">
+                  Water Filter Name / Location
+                </label>
+                <input
+                  type="text"
+                  id="filterName"
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  placeholder="e.g., Main Building, Sports Complex, Library"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-medium mb-2" htmlFor="filterQuality">
+                  Water Quality (1-5): {filterQuality} ⭐
+                </label>
+                <input
+                  type="range"
+                  id="filterQuality"
+                  min="1"
+                  max="5"
+                  value={filterQuality}
+                  onChange={(e) => setFilterQuality(parseInt(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Poor (1)</span>
+                  <span>Excellent (5)</span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={!filterLocation || addingWaterFilter}
+                className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-md"
+              >
+                {addingWaterFilter ? '⏳ Adding Water Filter...' : '✓ Add Water Filter to Map'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* Manage Dustbins Section */}
       <div className="mb-8 bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-xl shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -411,35 +613,107 @@ const AdminPage = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Latitude
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Longitude
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Latitude</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Longitude</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {dustbins.map((bin) => (
                       <tr key={bin._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {bin.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                          {bin.location.coordinates[1].toFixed(6)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                          {bin.location.coordinates[0].toFixed(6)}
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bin.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{bin.location.coordinates[1].toFixed(6)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{bin.location.coordinates[0].toFixed(6)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
                             onClick={() => handleDeleteDustbin(bin._id, bin.name)}
+                            className="text-red-600 hover:text-red-800 inline-flex items-center px-3 py-2 rounded-md hover:bg-red-100 transition-colors"
+                          >
+                            <span className="mr-1">🗑️</span> Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ✨ NEW: Manage Water Filters Section */}
+      <div className="mb-8 bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800">💧 Manage Water Filters</h2>
+            <p className="text-sm text-gray-600 mt-1">Toggle status, update quality, and delete water filters</p>
+          </div>
+          <button
+            onClick={() => setShowManageWaterFilters(!showManageWaterFilters)}
+            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+          >
+            {showManageWaterFilters ? 'Close' : 'Manage Water Filters'}
+          </button>
+        </div>
+
+        {showManageWaterFilters && (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {fetchingWaterFilters ? (
+              <div className="text-center py-10">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                <p className="mt-4 text-gray-600">Loading water filters...</p>
+              </div>
+            ) : waterFilters.length === 0 ? (
+              <div className="text-center py-12">
+                <span className="text-6xl mb-4 block">💧</span>
+                <p className="text-gray-500 italic">No water filters found. Add some water filters to get started.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quality</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coordinates</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {waterFilters.map((filter) => (
+                      <tr key={filter._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{filter.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            filter.status === 'available' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {filter.status === 'available' ? '✓ Available' : '✗ Unavailable'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {'⭐'.repeat(filter.quality)} ({filter.quality}/5)
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                          {filter.location.coordinates[1].toFixed(4)}, {filter.location.coordinates[0].toFixed(4)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                          <button
+                            onClick={() => handleToggleWaterFilterStatus(filter._id, filter.status, filter.name)}
+                            className={`inline-flex items-center px-3 py-2 rounded-md transition-colors ${
+                              filter.status === 'available'
+                                ? 'text-red-600 hover:text-red-800 hover:bg-red-100'
+                                : 'text-green-600 hover:text-green-800 hover:bg-green-100'
+                            }`}
+                          >
+                            {filter.status === 'available' ? '🔴 Mark Unavailable' : '🟢 Mark Available'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteWaterFilter(filter._id, filter.name)}
                             className="text-red-600 hover:text-red-800 inline-flex items-center px-3 py-2 rounded-md hover:bg-red-100 transition-colors"
                           >
                             <span className="mr-1">🗑️</span> Delete

@@ -44,4 +44,50 @@ export const dustbinAPI = {
   },
 };
 
+// ✨ NEW: Water Filter API
+export const waterFilterAPI = {
+  addWaterFilter: async (filterData) => {
+    const token = localStorage.getItem('adminToken');
+    return axios.post('http://localhost:5000/api/water-filters/add', filterData, {
+      headers: {
+        'x-auth-token': token,
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+  
+  toggleStatus: async (filterId) => {
+    const token = localStorage.getItem('adminToken');
+    return axios.put(`http://localhost:5000/api/water-filters/toggle-status/${filterId}`, {}, {
+      headers: {
+        'x-auth-token': token,
+      },
+    });
+  },
+  
+  updateQuality: async (filterId, quality) => {
+    const token = localStorage.getItem('adminToken');
+    return axios.put(`http://localhost:5000/api/water-filters/update-quality/${filterId}`, 
+      { quality }, 
+      {
+        headers: {
+          'x-auth-token': token,
+        },
+      }
+    );
+  },
+  
+  deleteWaterFilter: async (filterId) => {
+    const token = localStorage.getItem('adminToken');
+    return axios.delete(`http://localhost:5000/api/water-filters/delete/${filterId}`, {
+      headers: {
+        'x-auth-token': token,
+      },
+    });
+  },
+  
+  getAllWaterFilters: async () => {
+    return axios.get('http://localhost:5000/api/water-filters');
+  },
+};
 export default api;
