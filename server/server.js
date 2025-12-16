@@ -14,6 +14,7 @@ const getAllowedOrigins = () => {
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     process.env.CLIENT_URL,
+    `${process.env.REACT_APP_API_BASE}`
   ];
 
   // Allow LAN IPs (for phone or VSCode port-forwarding)
@@ -33,6 +34,7 @@ const allowedOrigins = [
   'https://ecolocate-j7aqi9nbb-gagancn10s-projects.vercel.app',    // Preview deployment
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  `${process.env.REACT_APP_API_BASE}`
 ];
 
 // Add wildcard support for all Vercel preview deployments
@@ -99,7 +101,7 @@ app._router.stack.forEach(function(r){
 
 // const PORT = process.env.PORT || 5000;
 // app.listen(PORT, '0.0.0.0', () => {
-//   console.log(`🚀 Server running on http://localhost:${PORT}`);
+//   console.log(`Server running on http://localhost:${PORT}`);
 
 //   // show LAN IPs for testing on phone
 //   const networkInterfaces = os.networkInterfaces();
