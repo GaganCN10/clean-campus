@@ -1,5 +1,12 @@
 const WasteReport = require('../models/WasteReport');
-const { v4: uuidv4 } = require('uuid');
+
+let uuidv4;
+
+// Load uuid dynamically (ESM-safe for Node 18 / Vercel)
+(async () => {
+  const { v4 } = await import('uuid');
+  uuidv4 = v4;
+})();
 
 exports.getWasteReports = async (req, res) => {
   try {
@@ -16,6 +23,11 @@ exports.createWasteReport = async (req, res) => {
 
   if (!lat || !lng) {
     return res.status(400).json({ message: 'Latitude and longitude are required.' });
+  }
+
+  // Safety check (very unlikely, but good practice)
+  if (!uuidv4) {
+    return res.status(503).json({ message: 'UUID generator not ready' });
   }
 
   const reportedBy = `user_${uuidv4().substring(0, 8)}`;
