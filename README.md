@@ -692,7 +692,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - 📧 Email: [Contact via GitHub](https://github.com/GaganCN10)
 - 🐙 GitHub: [@GaganCN10](https://github.com/GaganCN10)
 - 🔗 Project: [clean-campus](https://github.com/GaganCN10/clean-campus)
-- 🌐 Live Demo: [ecolocate.vercel.app](https://ecolocate.vercel.app)
+- 🌐 Live Demo: [ecolocate.vercel.app](https://college-locate.vercel.app)
 
 ### Support the Project
 
