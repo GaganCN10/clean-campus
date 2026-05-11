@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const os = require('os');
@@ -14,6 +14,7 @@ const getAllowedOrigins = () => {
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     process.env.CLIENT_URL,
+    `${process.env.REACT_APP_API_BASE}`
   ];
 
   // Allow LAN IPs (for phone or VSCode port-forwarding)
@@ -33,6 +34,7 @@ const allowedOrigins = [
   'https://ecolocate-j7aqi9nbb-gagancn10s-projects.vercel.app',    // Preview deployment
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  `${process.env.REACT_APP_API_BASE}`
 ];
 
 // Add wildcard support for all Vercel preview deployments
@@ -76,10 +78,11 @@ app.options('*', cors(corsOptions));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch((err) => console.error('❌ Mongo Error:', err));
+const connectDB = require('./db');
+
+connectDB()
+  .then(() => console.log('✅ MongoDB connected (cached)'))
+  .catch(err => console.error('❌ Mongo error:', err));
 
 app.get('/', (req, res) => res.json({ status: 'API working fine ✅' }));
 
@@ -97,17 +100,19 @@ app._router.stack.forEach(function(r){
     console.log('📍 Route:', r.route.path)
   }
 });
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
 
-  // show LAN IPs for testing on phone
-  const networkInterfaces = os.networkInterfaces();
-  for (const name in networkInterfaces) {
-    for (const iface of networkInterfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        console.log(`📱 Mobile access: http://${iface.address}:${PORT}`);
-      }
-    }
-  }
-});
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT, '0.0.0.0', () => {
+//   console.log(`Server running on http://localhost:${PORT}`);
+
+//   // show LAN IPs for testing on phone
+//   const networkInterfaces = os.networkInterfaces();
+//   for (const name in networkInterfaces) {
+//     for (const iface of networkInterfaces[name]) {
+//       if (iface.family === 'IPv4' && !iface.internal) {
+//         console.log(`📱 Mobile access: http://${iface.address}:${PORT}`);
+//       }
+//     }
+//   }
+// });
+module.exports = app;
