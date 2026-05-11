@@ -96,7 +96,8 @@ const WasteReportPage = () => {
       if (userLocation && map) {
         map.setView(userLocation, 16, { animate: true });
       }
-    }, [userLocation, map]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [map]);
 
     useMapEvents({
       click: (e) => {

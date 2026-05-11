@@ -32,6 +32,7 @@ const LocateRestroomPage = () => {
   
   useEffect(() => {
     fetchRestrooms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gender, userLocation]);
 
   

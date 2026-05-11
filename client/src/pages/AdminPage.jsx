@@ -297,7 +297,7 @@ const AdminPage = () => {
     const loadingToast = toast.loading('Adding dustbin...');
 
     try {
-      const response = await dustbinAPI.addDustbin({
+      await dustbinAPI.addDustbin({
         name: dustbinName.trim(),
         latitude: location.latitude,
         longitude: location.longitude,
@@ -334,7 +334,7 @@ const AdminPage = () => {
     const loadingToast = toast.loading('Adding water filter...');
 
     try {
-      const response = await waterFilterAPI.addWaterFilter({
+      await waterFilterAPI.addWaterFilter({
         name: filterName.trim(),
         latitude: filterLocation.latitude,
         longitude: filterLocation.longitude,
@@ -342,7 +342,6 @@ const AdminPage = () => {
       });
 
       toast.success('Water filter added successfully! 💧', { id: loadingToast });
-      console.log('✅ Water filter added:', response.data);
 
       setFilterName('');
       setFilterLocation(null);
@@ -505,6 +504,7 @@ const AdminPage = () => {
   };
 
   // ✨ NEW: Handle update water filter quality
+  /*
   const handleUpdateQuality = async (id, newQuality, name) => {
     const loadingToast = toast.loading('Updating quality...');
 
@@ -517,6 +517,7 @@ const AdminPage = () => {
       toast.error(err.response?.data?.message || 'Failed to update quality', { id: loadingToast });
     }
   };
+  */
 
   const handleLogin = async (e) => {
     e.preventDefault();
