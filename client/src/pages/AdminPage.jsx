@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api, { dustbinAPI, waterFilterAPI } from '../utils/api';
+import api, { dustbinAPI, waterFilterAPI, foodCourtAPI, restroomAPI } from '../utils/api';
 import toast from 'react-hot-toast';
 
 const AdminPage = () => {
@@ -28,6 +28,27 @@ const AdminPage = () => {
   const [waterFilters, setWaterFilters] = useState([]);
   const [fetchingWaterFilters, setFetchingWaterFilters] = useState(false);
   const [showManageWaterFilters, setShowManageWaterFilters] = useState(false);
+
+  // ✨ Food Court State
+  const [showAddFoodCourt, setShowAddFoodCourt] = useState(false);
+  const [foodCourtName, setFoodCourtName] = useState('');
+  const [foodCourtLocation, setFoodCourtLocation] = useState(null);
+  const [loadingFoodCourtLocation, setLoadingFoodCourtLocation] = useState(false);
+  const [addingFoodCourt, setAddingFoodCourt] = useState(false);
+  const [foodCourts, setFoodCourts] = useState([]);
+  const [fetchingFoodCourts, setFetchingFoodCourts] = useState(false);
+  const [showManageFoodCourts, setShowManageFoodCourts] = useState(false);
+
+  // ✨ Restroom State
+  const [showAddRestroom, setShowAddRestroom] = useState(false);
+  const [restroomName, setRestroomName] = useState('');
+  const [restroomGender, setRestroomGender] = useState('Unisex');
+  const [restroomLocation, setRestroomLocation] = useState(null);
+  const [loadingRestroomLocation, setLoadingRestroomLocation] = useState(false);
+  const [addingRestroom, setAddingRestroom] = useState(false);
+  const [restrooms, setRestrooms] = useState([]);
+  const [fetchingRestrooms, setFetchingRestrooms] = useState(false);
+  const [showManageRestrooms, setShowManageRestrooms] = useState(false);
 
   const fetchReports = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -84,13 +105,43 @@ const AdminPage = () => {
     }
   }, [isAuthenticated]);
 
+  const fetchFoodCourts = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setFetchingFoodCourts(true);
+    try {
+      const res = await foodCourtAPI.getAllFoodCourts();
+      setFoodCourts(res.data);
+    } catch (err) {
+      console.error('❌ Failed to fetch food courts:', err);
+      toast.error('Failed to fetch food courts');
+    } finally {
+      setFetchingFoodCourts(false);
+    }
+  }, [isAuthenticated]);
+
+  const fetchRestrooms = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setFetchingRestrooms(true);
+    try {
+      const res = await restroomAPI.getAllRestrooms();
+      setRestrooms(res.data);
+    } catch (err) {
+      console.error('❌ Failed to fetch restrooms:', err);
+      toast.error('Failed to fetch restrooms');
+    } finally {
+      setFetchingRestrooms(false);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchReports();
       fetchDustbins();
       fetchWaterFilters();
+      fetchFoodCourts();
+      fetchRestrooms();
     }
-  }, [isAuthenticated, fetchReports, fetchDustbins, fetchWaterFilters]);
+  }, [isAuthenticated, fetchReports, fetchDustbins, fetchWaterFilters, fetchFoodCourts, fetchRestrooms]);
 
   const handleMarkAsClean = async (id) => {
     try {
@@ -185,6 +236,50 @@ const AdminPage = () => {
     );
   };
 
+  const getFoodCourtLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    setLoadingFoodCourtLocation(true);
+    toast.loading('Getting your location...', { id: 'foodcourt-location' });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFoodCourtLocation({ latitude, longitude });
+        toast.success(`Location captured: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, { id: 'foodcourt-location' });
+        setLoadingFoodCourtLocation(false);
+      },
+      (error) => {
+        toast.error('Failed to get location', { id: 'foodcourt-location' });
+        setLoadingFoodCourtLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  const getRestroomLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    setLoadingRestroomLocation(true);
+    toast.loading('Getting your location...', { id: 'restroom-location' });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setRestroomLocation({ latitude, longitude });
+        toast.success(`Location captured: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, { id: 'restroom-location' });
+        setLoadingRestroomLocation(false);
+      },
+      (error) => {
+        toast.error('Failed to get location', { id: 'restroom-location' });
+        setLoadingRestroomLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const handleAddDustbin = async (e) => {
     e.preventDefault();
 
@@ -262,6 +357,55 @@ const AdminPage = () => {
     }
   };
 
+  const handleAddFoodCourt = async (e) => {
+    e.preventDefault();
+    if (!foodCourtLocation) return toast.error('Please capture your current location first');
+    if (!foodCourtName.trim()) return toast.error('Please enter a food court name');
+    setAddingFoodCourt(true);
+    const loadingToast = toast.loading('Adding food court...');
+    try {
+      await foodCourtAPI.addFoodCourt({
+        name: foodCourtName.trim(),
+        latitude: foodCourtLocation.latitude,
+        longitude: foodCourtLocation.longitude,
+      });
+      toast.success('Food court added successfully! 🍔', { id: loadingToast });
+      setFoodCourtName('');
+      setFoodCourtLocation(null);
+      setShowAddFoodCourt(false);
+      fetchFoodCourts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add food court', { id: loadingToast });
+    } finally {
+      setAddingFoodCourt(false);
+    }
+  };
+
+  const handleAddRestroom = async (e) => {
+    e.preventDefault();
+    if (!restroomLocation) return toast.error('Please capture your current location first');
+    if (!restroomName.trim()) return toast.error('Please enter a restroom name');
+    setAddingRestroom(true);
+    const loadingToast = toast.loading('Adding restroom...');
+    try {
+      await restroomAPI.addRestroom({
+        name: restroomName.trim(),
+        gender: restroomGender,
+        latitude: restroomLocation.latitude,
+        longitude: restroomLocation.longitude,
+      });
+      toast.success('Restroom added successfully! 🚻', { id: loadingToast });
+      setRestroomName('');
+      setRestroomLocation(null);
+      setShowAddRestroom(false);
+      fetchRestrooms();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add restroom', { id: loadingToast });
+    } finally {
+      setAddingRestroom(false);
+    }
+  };
+
   const handleDeleteDustbin = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete the dustbin "${name}"? This action cannot be undone.`)) {
       return;
@@ -309,6 +453,54 @@ const AdminPage = () => {
     } catch (err) {
       console.error('❌ Failed to delete water filter:', err);
       toast.error(err.response?.data?.message || 'Failed to delete water filter', { id: loadingToast });
+    }
+  };
+
+  const handleToggleFoodCourtStatus = async (id, currentStatus, name) => {
+    const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+    const loadingToast = toast.loading(`Marking food court as ${newStatus}...`);
+    try {
+      await foodCourtAPI.toggleStatus(id);
+      toast.success(`Food court "${name}" is now ${newStatus}!`, { id: loadingToast });
+      fetchFoodCourts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update status', { id: loadingToast });
+    }
+  };
+
+  const handleDeleteFoodCourt = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete the food court "${name}"?`)) return;
+    const loadingToast = toast.loading('Deleting food court...');
+    try {
+      await foodCourtAPI.deleteFoodCourt(id);
+      toast.success('Food court deleted successfully!', { id: loadingToast });
+      setFoodCourts(prev => prev.filter(fc => fc._id !== id));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete food court', { id: loadingToast });
+    }
+  };
+
+  const handleToggleRestroomStatus = async (id, currentStatus, name) => {
+    const newStatus = currentStatus === 'available' ? 'unavailable' : 'available';
+    const loadingToast = toast.loading(`Marking restroom as ${newStatus}...`);
+    try {
+      await restroomAPI.toggleStatus(id);
+      toast.success(`Restroom "${name}" is now ${newStatus}!`, { id: loadingToast });
+      fetchRestrooms();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update status', { id: loadingToast });
+    }
+  };
+
+  const handleDeleteRestroom = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete the restroom "${name}"?`)) return;
+    const loadingToast = toast.loading('Deleting restroom...');
+    try {
+      await restroomAPI.deleteRestroom(id);
+      toast.success('Restroom deleted successfully!', { id: loadingToast });
+      setRestrooms(prev => prev.filter(r => r._id !== id));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete restroom', { id: loadingToast });
     }
   };
 
@@ -724,6 +916,260 @@ const AdminPage = () => {
                   </tbody>
                 </table>
               </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ✨ NEW: Add Food Court Section */}
+      <div className="mb-8 bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800">🍔 Add New Food Court</h2>
+            <p className="text-sm text-gray-600 mt-1">Add a food court at your current location</p>
+          </div>
+          <button
+            onClick={() => setShowAddFoodCourt(!showAddFoodCourt)}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          >
+            {showAddFoodCourt ? 'Close' : '+ Add Food Court'}
+          </button>
+        </div>
+
+        {showAddFoodCourt && (
+          <form onSubmit={handleAddFoodCourt} className="bg-white p-6 rounded-lg shadow-md">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Current Location</label>
+                <div className="flex gap-3 items-center">
+                  <button
+                    type="button"
+                    onClick={getFoodCourtLocation}
+                    disabled={loadingFoodCourtLocation}
+                    className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-400 font-medium"
+                  >
+                    {loadingFoodCourtLocation ? '⏳ Getting...' : '📍 Capture Location'}
+                  </button>
+                  {foodCourtLocation && (
+                    <div className="flex-1 bg-red-50 p-3 rounded-lg">
+                      <p className="text-sm text-red-800 font-mono">
+                        📍 Lat: {foodCourtLocation.latitude.toFixed(6)}, Lng: {foodCourtLocation.longitude.toFixed(6)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Food Court Name</label>
+                <input
+                  type="text"
+                  value={foodCourtName}
+                  onChange={(e) => setFoodCourtName(e.target.value)}
+                  placeholder="e.g., Main Canteen"
+                  className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-red-500"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!foodCourtLocation || addingFoodCourt}
+                className="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 disabled:bg-gray-400"
+              >
+                {addingFoodCourt ? '⏳ Adding...' : '✓ Add Food Court'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* ✨ NEW: Manage Food Courts Section */}
+      <div className="mb-8 bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800">🍔 Manage Food Courts</h2>
+          </div>
+          <button
+            onClick={() => setShowManageFoodCourts(!showManageFoodCourts)}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          >
+            {showManageFoodCourts ? 'Close' : 'Manage Food Courts'}
+          </button>
+        </div>
+
+        {showManageFoodCourts && (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {fetchingFoodCourts ? (
+              <div className="text-center py-10">Loading...</div>
+            ) : foodCourts.length === 0 ? (
+              <div className="text-center py-12">No food courts found.</div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {foodCourts.map(fc => (
+                    <tr key={fc._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{fc.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {fc.status === 'open' ? '🟢 Open' : '🔴 Closed'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => handleToggleFoodCourtStatus(fc._id, fc.status, fc.name)}
+                          className="text-blue-600 hover:text-blue-800 px-3 py-2"
+                        >
+                          Toggle Status
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFoodCourt(fc._id, fc.name)}
+                          className="text-red-600 hover:text-red-800 px-3 py-2"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ✨ NEW: Add Restroom Section */}
+      <div className="mb-8 bg-gradient-to-r from-teal-50 to-blue-50 p-6 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800">🚻 Add New Restroom</h2>
+            <p className="text-sm text-gray-600 mt-1">Add a restroom at your current location</p>
+          </div>
+          <button
+            onClick={() => setShowAddRestroom(!showAddRestroom)}
+            className="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium"
+          >
+            {showAddRestroom ? 'Close' : '+ Add Restroom'}
+          </button>
+        </div>
+
+        {showAddRestroom && (
+          <form onSubmit={handleAddRestroom} className="bg-white p-6 rounded-lg shadow-md">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Current Location</label>
+                <div className="flex gap-3 items-center">
+                  <button
+                    type="button"
+                    onClick={getRestroomLocation}
+                    disabled={loadingRestroomLocation}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 font-medium"
+                  >
+                    {loadingRestroomLocation ? '⏳ Getting...' : '📍 Capture Location'}
+                  </button>
+                  {restroomLocation && (
+                    <div className="flex-1 bg-teal-50 p-3 rounded-lg">
+                      <p className="text-sm text-teal-800 font-mono">
+                        📍 Lat: {restroomLocation.latitude.toFixed(6)}, Lng: {restroomLocation.longitude.toFixed(6)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Restroom Name</label>
+                <input
+                  type="text"
+                  value={restroomName}
+                  onChange={(e) => setRestroomName(e.target.value)}
+                  placeholder="e.g., Library Restroom"
+                  className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-teal-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Gender</label>
+                <select
+                  value={restroomGender}
+                  onChange={(e) => setRestroomGender(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Unisex">Unisex</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={!restroomLocation || addingRestroom}
+                className="w-full bg-teal-600 text-white font-bold py-3 rounded-lg hover:bg-teal-700 disabled:bg-gray-400"
+              >
+                {addingRestroom ? '⏳ Adding...' : '✓ Add Restroom'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* ✨ NEW: Manage Restrooms Section */}
+      <div className="mb-8 bg-gradient-to-r from-teal-50 to-blue-50 p-6 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800">🚻 Manage Restrooms</h2>
+          </div>
+          <button
+            onClick={() => setShowManageRestrooms(!showManageRestrooms)}
+            className="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium"
+          >
+            {showManageRestrooms ? 'Close' : 'Manage Restrooms'}
+          </button>
+        </div>
+
+        {showManageRestrooms && (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {fetchingRestrooms ? (
+              <div className="text-center py-10">Loading...</div>
+            ) : restrooms.length === 0 ? (
+              <div className="text-center py-12">No restrooms found.</div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gender</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {restrooms.map(r => (
+                    <tr key={r._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{r.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{r.gender}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {r.status === 'available' ? '🟢 Available' : '🔴 Unavailable'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button
+                          onClick={() => handleToggleRestroomStatus(r._id, r.status, r.name)}
+                          className="text-blue-600 hover:text-blue-800 px-3 py-2"
+                        >
+                          Toggle Status
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRestroom(r._id, r.name)}
+                          className="text-red-600 hover:text-red-800 px-3 py-2"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         )}

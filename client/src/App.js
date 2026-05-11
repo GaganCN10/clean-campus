@@ -8,6 +8,8 @@ import WasteReportPage from './pages/WasteReportPage';
 import LocateDustbinPage from './pages/LocateDustbinPage';
 import AdminPage from './pages/AdminPage';
 import LocateWaterFiltersPage from './pages/LocateWaterFiltersPage';
+import LocateFoodCourtPage from './pages/LocateFoodCourtPage';
+import LocateRestroomPage from './pages/LocateRestroomPage';
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
               <Route path="/locate-dustbins" element={<LocateDustbinPage />} />
               <Route path="/admin" element={<AdminPage />} /> 
               <Route path="/locate-water-filters" element={<LocateWaterFiltersPage />} />
+              <Route path="/locate-food-courts" element={<LocateFoodCourtPage />} />
+              <Route path="/locate-restrooms" element={<LocateRestroomPage />} />
             </Routes>
           </main>
           <Toaster position="top-right" />

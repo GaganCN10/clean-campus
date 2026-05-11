@@ -285,4 +285,54 @@ export const waterFilterAPI = {
   },
 };
 
+export const foodCourtAPI = {
+  addFoodCourt: async (data) => {
+    const token = localStorage.getItem('adminToken');
+    return api.post('/api/food-courts/add', data, {
+      headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
+    });
+  },
+  toggleStatus: async (id) => {
+    const token = localStorage.getItem('adminToken');
+    return api.put(`/api/food-courts/toggle-status/${id}`, {}, {
+      headers: { 'x-auth-token': token },
+    });
+  },
+  deleteFoodCourt: async (id) => {
+    const token = localStorage.getItem('adminToken');
+    return api.delete(`/api/food-courts/delete/${id}`, {
+      headers: { 'x-auth-token': token },
+    });
+  },
+  getAllFoodCourts: async () => {
+    return api.get('/api/food-courts');
+  },
+};
+
+export const restroomAPI = {
+  addRestroom: async (data) => {
+    const token = localStorage.getItem('adminToken');
+    return api.post('/api/restrooms/add', data, {
+      headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
+    });
+  },
+  toggleStatus: async (id) => {
+    const token = localStorage.getItem('adminToken');
+    return api.put(`/api/restrooms/toggle-status/${id}`, {}, {
+      headers: { 'x-auth-token': token },
+    });
+  },
+  deleteRestroom: async (id) => {
+    const token = localStorage.getItem('adminToken');
+    return api.delete(`/api/restrooms/delete/${id}`, {
+      headers: { 'x-auth-token': token },
+    });
+  },
+  getAllRestrooms: async (gender = null) => {
+    let url = '/api/restrooms';
+    if (gender) url += `?gender=${gender}`;
+    return api.get(url);
+  },
+};
+
 export default api;

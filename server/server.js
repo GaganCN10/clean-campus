@@ -88,6 +88,8 @@ app.use('/api/dustbins', require('./routes/dustbins'));
 app.use('/api/waste-reports', require('./routes/wasteReports'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/water-filters', require('./routes/waterFilters')); // ✨ NEW
+app.use('/api/food-courts', require('./routes/foodCourts'));
+app.use('/api/restrooms', require('./routes/restrooms'));
 
 // ✨ ADD THIS DEBUG CODE:
 app._router.stack.forEach(function(r){
