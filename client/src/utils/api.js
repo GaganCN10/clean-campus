@@ -195,7 +195,7 @@
 // export default api;
 import axios from "axios";
 
-const baseURL = process.env.REACT_APP_API_URL || "https://ecolocate.onrender.com";
+const baseURL = process.env.REACT_APP_API_URL || "https://clean-campus-6vxz.vercel.app";
 
 console.log("🌍 Using API Base URL:", baseURL);
 
